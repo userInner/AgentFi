@@ -14,10 +14,10 @@ const navItems = [
   { href: "/bots", label: "交易机器人", icon: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 15h0"/><path d="M15 15h0"/></svg>
   )},
-  { href: "/invest", label: "投资大厅", icon: (
+  { href: "/invest", label: "执行中心", icon: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
   )},
-  { href: "/portfolio", label: "我的投资", icon: (
+  { href: "/portfolio", label: "决策日志", icon: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
   )},
   { href: "/settings", label: "设置", icon: (

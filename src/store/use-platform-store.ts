@@ -84,7 +84,7 @@ const INITIAL_INVESTMENTS: Investment[] = [
   },
 ];
 
-export const usePlatformStore = create<PlatformState>((set, get) => ({
+export const usePlatformStore = create<PlatformState>((set) => ({
   walletConnected: false,
   walletAddress: "",
   userBalance: 50000,
