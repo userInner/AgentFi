@@ -5,7 +5,7 @@ import { usePlatformStore } from "@/store/use-platform-store";
 import { fmtTime, fmtUsd } from "@/lib/format";
 
 export default function PortfolioPage() {
-  const { transactions } = usePlatformStore();
+  const { transactions, riskAlerts } = usePlatformStore();
 
   const confirmedCount = useMemo(() => Math.floor(transactions.length * 0.58), [transactions.length]);
   const pendingCount = Math.max(0, transactions.length - confirmedCount);
@@ -17,7 +17,7 @@ export default function PortfolioPage() {
         <p className="text-[13px] text-muted mt-0.5">记录每次建议、执行与结果，支持审计回放</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="border border-border rounded-lg p-4">
           <p className="text-[11px] text-muted uppercase tracking-wider">总事件数</p>
           <p className="text-xl font-mono mt-1">{transactions.length}</p>
@@ -29,6 +29,10 @@ export default function PortfolioPage() {
         <div className="border border-border rounded-lg p-4">
           <p className="text-[11px] text-muted uppercase tracking-wider">待确认</p>
           <p className="text-xl font-mono mt-1 text-warning">{pendingCount}</p>
+        </div>
+        <div className="border border-border rounded-lg p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider">风控触发</p>
+          <p className="text-xl font-mono mt-1 text-loss">{riskAlerts.length}</p>
         </div>
       </div>
 

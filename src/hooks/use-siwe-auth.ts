@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { useAuthStore } from "@/store/use-auth-store";
-import { createSiweMessage, generateNonce, verifySignature } from "@/lib/siwe";
+import { createSiweMessage, fetchNonce, verifySignature } from "@/lib/siwe";
 
 export function useSiweAuth() {
   const { address, chainId, isConnected } = useAccount();
@@ -16,8 +16,8 @@ export function useSiweAuth() {
     try {
       setSigningIn(true);
 
-      // 1. 获取 nonce（正式环境从后端 GET /api/auth/nonce）
-      const nonce = generateNonce();
+      // 1. 获取 nonce（后端签发，一次性使用）
+      const nonce = await fetchNonce();
 
       // 2. 构造 SIWE 消息
       const message = createSiweMessage(address, chainId, nonce);

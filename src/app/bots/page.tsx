@@ -1,11 +1,68 @@
 "use client";
 
+import { useState } from "react";
 import { Sparkline } from "@/components/sparkline";
 import { usePlatformStore } from "@/store/use-platform-store";
+import { useAuthStore } from "@/store/use-auth-store";
+import { requestAgentDecision } from "@/lib/agent";
 import { fmtUsd, fmtPnl, fmtPct } from "@/lib/format";
 
+const pairBasePrice: Record<string, number> = {
+  "BTC-PERP": 96000,
+  "ETH-PERP": 3300,
+  "SOL-PERP": 190,
+};
+
 export default function BotsPage() {
-  const { bots, toggleBot } = usePlatformStore();
+  const { bots, toggleBot, addTransaction } = usePlatformStore();
+  const { token, isAuthenticated } = useAuthStore();
+  const [decisionMsg, setDecisionMsg] = useState<string>("");
+  const [loadingBotId, setLoadingBotId] = useState<string>("");
+
+  const runAgent = async (botId: string) => {
+    const bot = bots.find((item) => item.id === botId);
+    if (!bot) return;
+    if (!token || !isAuthenticated) {
+      setDecisionMsg("请先连接钱包并完成 SIWE 签名登录，再运行 AI 代理。");
+      return;
+    }
+
+    setLoadingBotId(botId);
+    setDecisionMsg("");
+
+    try {
+      const base = pairBasePrice[bot.pair] ?? 1000;
+      const latestPrice = base * (1 + (Math.random() - 0.5) * 0.02);
+      const momentumPct = Number(((Math.random() - 0.5) * 4).toFixed(2));
+
+      const decision = await requestAgentDecision(token, {
+        pair: bot.pair,
+        latestPrice,
+        momentumPct,
+        riskLevel: bot.status === "running" ? "medium" : "low",
+      });
+
+      if (decision.action !== "hold") {
+        addTransaction({
+          id: `manual-${Date.now()}-${bot.id}`,
+          botId: bot.id,
+          botName: bot.name,
+          type: decision.action,
+          pair: bot.pair,
+          amount: decision.suggestedAmountUsd,
+          price: latestPrice,
+          pnl: 0,
+          timestamp: decision.generatedAt,
+        });
+      }
+
+      setDecisionMsg(`${bot.name}：${decision.reason}（置信度 ${(decision.confidence * 100).toFixed(1)}%）`);
+    } catch {
+      setDecisionMsg("AI 代理请求失败，请稍后重试。");
+    } finally {
+      setLoadingBotId("");
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -18,6 +75,12 @@ export default function BotsPage() {
           + 创建机器人
         </button>
       </div>
+
+      {decisionMsg && (
+        <div className="border border-border rounded-md px-4 py-2 text-[12px] text-foreground bg-white/[0.02]">
+          {decisionMsg}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {bots.map((bot) => (
@@ -67,8 +130,12 @@ export default function BotsPage() {
             </div>
 
             <div className="flex gap-2 pt-3 border-t border-border">
-              <button className="flex-1 px-3 py-1.5 text-[12px] text-muted border border-border rounded-md hover:text-foreground hover:border-border-strong transition-colors">
-                详情
+              <button
+                onClick={() => runAgent(bot.id)}
+                disabled={loadingBotId === bot.id}
+                className="flex-1 px-3 py-1.5 text-[12px] text-accent border border-accent/30 rounded-md hover:bg-accent/10 transition-colors disabled:opacity-50"
+              >
+                {loadingBotId === bot.id ? "代理执行中..." : "运行 AI 代理"}
               </button>
               <button
                 onClick={() => toggleBot(bot.id)}

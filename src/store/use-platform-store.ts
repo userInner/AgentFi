@@ -1,33 +1,59 @@
 import { create } from "zustand";
-import type { Bot, Trader, Investment, Transaction } from "./types";
+import type { Bot, Trader, Investment, Transaction, RiskAlert, RiskConfig } from "./types";
 
 interface PlatformState {
-  // User
   walletConnected: boolean;
   walletAddress: string;
   userBalance: number;
-
-  // Bots
   bots: Bot[];
-
-  // Traders
   traders: Trader[];
-
-  // Investments
   investments: Investment[];
-
-  // Transactions (recent)
   transactions: Transaction[];
+  riskConfig: RiskConfig;
+  riskAlerts: RiskAlert[];
 
-  // Actions
   connectWallet: () => void;
   disconnectWallet: () => void;
   toggleBot: (botId: string) => void;
   tickBotData: () => void;
+  updateRiskConfig: (next: Partial<RiskConfig>) => void;
+  clearRiskAlerts: () => void;
   addInvestment: (traderId: string, amount: number) => void;
   redeemInvestment: (investmentId: string) => void;
   addTransaction: (tx: Transaction) => void;
 }
+
+const MAX_TRANSACTIONS = 50;
+const MAX_ALERTS = 30;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+const DEFAULT_RISK_CONFIG: RiskConfig = {
+  maxPositionPct: 20,
+  stopLossPct: 3.5,
+  maxOrdersPerHour: 8,
+  autoPauseOnBreach: true,
+};
+
+const createId = (prefix: string) => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+};
+
+const createRiskAlert = (
+  bot: Bot,
+  type: RiskAlert["type"],
+  message: string,
+  timestamp: number,
+): RiskAlert => ({
+  id: createId("risk"),
+  botId: bot.id,
+  botName: bot.name,
+  type,
+  message,
+  timestamp,
+});
 
 const INITIAL_BOTS: Bot[] = [
   {
@@ -92,11 +118,13 @@ export const usePlatformStore = create<PlatformState>((set) => ({
   traders: INITIAL_TRADERS,
   investments: INITIAL_INVESTMENTS,
   transactions: [],
+  riskConfig: DEFAULT_RISK_CONFIG,
+  riskAlerts: [],
 
   connectWallet: () =>
     set({
       walletConnected: true,
-      walletAddress: "0x" + Math.random().toString(16).slice(2, 10) + "..." + Math.random().toString(16).slice(2, 6),
+      walletAddress: `0x${Math.random().toString(16).slice(2, 10)}...${Math.random().toString(16).slice(2, 6)}`,
     }),
 
   disconnectWallet: () =>
@@ -107,18 +135,37 @@ export const usePlatformStore = create<PlatformState>((set) => ({
       bots: state.bots.map((b) =>
         b.id === botId
           ? { ...b, status: b.status === "running" ? "paused" as const : "running" as const }
-          : b
+          : b,
       ),
     })),
 
+  updateRiskConfig: (next) =>
+    set((state) => ({
+      riskConfig: {
+        ...state.riskConfig,
+        ...next,
+      },
+    })),
+
+  clearRiskAlerts: () => set({ riskAlerts: [] }),
+
   tickBotData: () =>
     set((state) => {
+      if (!state.bots.some((bot) => bot.status === "running")) {
+        return state;
+      }
+
+      const now = Date.now();
+      const lastHourStart = now - ONE_HOUR_MS;
+      const recentOrders = state.transactions.filter((tx) => tx.timestamp >= lastHourStart).length;
+      let blockedByFrequency = recentOrders >= state.riskConfig.maxOrdersPerHour;
+
       const newTxs: Transaction[] = [];
+      const newAlerts: RiskAlert[] = [];
 
       const bots = state.bots.map((b) => {
         if (b.status !== "running") return b;
 
-        // Random ROI fluctuation: -0.3% ~ +0.5%
         const delta = (Math.random() - 0.35) * 0.8;
         const newRoi = Math.round((b.roi + delta) * 10) / 10;
         const pnlDelta = Math.round(b.aum * (delta / 100));
@@ -126,28 +173,58 @@ export const usePlatformStore = create<PlatformState>((set) => ({
         const newTrades = b.trades + (Math.random() > 0.5 ? 1 : 0);
         const newSpark = [...b.sparkData.slice(1), newRoi];
 
-        // Occasionally generate a transaction
-        if (Math.random() > 0.6) {
-          const isBuy = Math.random() > 0.5;
-          newTxs.push({
-            id: `tx-${Date.now()}-${b.id}`,
-            botId: b.id,
-            botName: b.name,
-            type: isBuy ? "buy" : "sell",
-            pair: b.pair,
-            amount: Math.round(Math.random() * 5000 + 500),
-            price: b.pair === "BTC-PERP" ? 95000 + Math.random() * 2000 : b.pair === "ETH-PERP" ? 3200 + Math.random() * 200 : 180 + Math.random() * 20,
-            pnl: isBuy ? 0 : Math.round((Math.random() - 0.3) * 500),
-            timestamp: Date.now(),
-          });
+        let nextStatus: Bot["status"] = b.status;
+
+        if (delta <= -(state.riskConfig.stopLossPct / 10)) {
+          newAlerts.push(
+            createRiskAlert(b, "stop_loss", `触发硬止损阈值：单次波动 ${delta.toFixed(2)}%`, now),
+          );
+          if (state.riskConfig.autoPauseOnBreach) {
+            nextStatus = "paused";
+          }
         }
 
-        return { ...b, roi: newRoi, pnl: newPnl, trades: newTrades, sparkData: newSpark };
+        if (Math.random() > 0.6 && nextStatus === "running") {
+          const amount = Math.round(Math.random() * 5000 + 500);
+          const positionPct = (amount / b.aum) * 100;
+
+          if (blockedByFrequency) {
+            newAlerts.push(
+              createRiskAlert(b, "frequency_limit", `超过每小时 ${state.riskConfig.maxOrdersPerHour} 次执行上限，已降级为建议模式`, now),
+            );
+          } else if (positionPct > state.riskConfig.maxPositionPct) {
+            newAlerts.push(
+              createRiskAlert(b, "position_limit", `建议仓位 ${positionPct.toFixed(1)}% 超过上限 ${state.riskConfig.maxPositionPct}%`, now),
+            );
+            if (state.riskConfig.autoPauseOnBreach) {
+              nextStatus = "paused";
+            }
+          } else {
+            const isBuy = Math.random() > 0.5;
+            newTxs.push({
+              id: createId("tx"),
+              botId: b.id,
+              botName: b.name,
+              type: isBuy ? "buy" : "sell",
+              pair: b.pair,
+              amount,
+              price: b.pair === "BTC-PERP" ? 95000 + Math.random() * 2000 : b.pair === "ETH-PERP" ? 3200 + Math.random() * 200 : 180 + Math.random() * 20,
+              pnl: isBuy ? 0 : Math.round((Math.random() - 0.3) * 500),
+              timestamp: now,
+            });
+
+            if (recentOrders + newTxs.length >= state.riskConfig.maxOrdersPerHour) {
+              blockedByFrequency = true;
+            }
+          }
+        }
+
+        return { ...b, status: nextStatus, roi: newRoi, pnl: newPnl, trades: newTrades, sparkData: newSpark };
       });
 
-      // Update investments based on bot performance
+      const runningBotMap = new Map(bots.map((bot) => [bot.id, bot]));
       const investments = state.investments.map((inv) => {
-        const bot = bots.find((b) => b.id === inv.botId);
+        const bot = runningBotMap.get(inv.botId);
         if (!bot || bot.status !== "running") return inv;
         const fluctuation = (Math.random() - 0.35) * 0.002;
         const newCurrent = Math.round(inv.current * (1 + fluctuation));
@@ -158,7 +235,8 @@ export const usePlatformStore = create<PlatformState>((set) => ({
       return {
         bots,
         investments,
-        transactions: [...newTxs, ...state.transactions].slice(0, 50),
+        transactions: [...newTxs, ...state.transactions].slice(0, MAX_TRANSACTIONS),
+        riskAlerts: [...newAlerts, ...state.riskAlerts].slice(0, MAX_ALERTS),
       };
     }),
 
@@ -168,9 +246,9 @@ export const usePlatformStore = create<PlatformState>((set) => ({
       if (!trader || amount > state.userBalance) return state;
 
       const newInv: Investment = {
-        id: `inv-${Date.now()}`,
+        id: createId("inv"),
         botId: state.bots[0]?.id || "bot-1",
-        botName: trader.name + " 策略",
+        botName: `${trader.name} 策略`,
         traderName: trader.name,
         invested: amount,
         current: amount,
@@ -184,7 +262,7 @@ export const usePlatformStore = create<PlatformState>((set) => ({
         traders: state.traders.map((t) =>
           t.id === traderId
             ? { ...t, aum: t.aum + amount, investors: t.investors + 1 }
-            : t
+            : t,
         ),
       };
     }),
@@ -201,6 +279,6 @@ export const usePlatformStore = create<PlatformState>((set) => ({
 
   addTransaction: (tx) =>
     set((state) => ({
-      transactions: [tx, ...state.transactions].slice(0, 50),
+      transactions: [tx, ...state.transactions].slice(0, MAX_TRANSACTIONS),
     })),
 }));

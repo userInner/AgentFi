@@ -47,3 +47,19 @@ export interface Transaction {
   pnl: number;
   timestamp: number;
 }
+
+export interface RiskConfig {
+  maxPositionPct: number;
+  stopLossPct: number;
+  maxOrdersPerHour: number;
+  autoPauseOnBreach: boolean;
+}
+
+export interface RiskAlert {
+  id: string;
+  botId: string;
+  botName: string;
+  type: "position_limit" | "frequency_limit" | "stop_loss";
+  message: string;
+  timestamp: number;
+}
