@@ -1,22 +1,9 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { TickerProvider } from "@/components/ticker-provider";
 import { Providers } from "@/components/providers";
 import { WalletSync } from "@/components/wallet-sync";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "AgentFi - AI Trading Platform",
@@ -30,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className="antialiased">
         <Providers>
           <WalletSync />
           <TickerProvider>

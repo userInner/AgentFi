@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgentFi
 
-## Getting Started
+AgentFi 是一个面向高阶 crypto 交易用户的 AI 决策与执行工具（非资管平台）。
 
-First, run the development server:
+## 90 天验证目标
+
+北极星指标：
+
+> 是否有一批高阶用户愿意持续使用并付费。
+
+当前产品聚焦：
+
+- Agent 创建与运行
+- 策略建议 + 执行建议
+- 半自动下单（人工确认）
+- 风控开关（仓位、止损、频率）
+- 决策日志（可解释、可回放）
+
+暂不提供：
+
+- AUM / 分润 / 跟投
+- 策略市场
+- 多交易所大而全接入
+
+## 核心验证指标
+
+1. Agent 创建后真实启动率
+2. 7 天 / 30 天留存
+3. 半自动执行频次
+4. 决策日志查看率
+5. 付费转化率
+
+## 本地开发
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 <http://localhost:3000> 查看。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 代码检查
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+```

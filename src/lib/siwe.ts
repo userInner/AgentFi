@@ -45,7 +45,7 @@ export async function verifySignature(message: string, signature: string): Promi
 
   // 模拟 JWT（正式环境由 Go 后端签发）
   const token = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${btoa(
-    JSON.stringify({ address, iat: Date.now(), exp: Date.now() + 86400000 })
+    JSON.stringify({ address, iat: Date.now(), exp: Date.now() + 86400000, sig: signature.slice(0, 10) })
   )}.mock_signature`;
 
   return { token, address };

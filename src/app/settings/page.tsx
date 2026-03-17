@@ -109,7 +109,7 @@ export default function SettingsPage() {
       {/* Notifications */}
       <section className="border border-border rounded-lg p-5 space-y-3">
         <h3 className="text-[13px] font-medium text-foreground">通知设置</h3>
-        {["交易执行通知", "盈亏预警", "机器人状态变更", "新投资者加入"].map((item) => (
+        {["交易执行通知", "盈亏预警", "机器人状态变更", "风控触发告警"].map((item) => (
           <label key={item} className="flex items-center justify-between p-3 rounded-md border border-border cursor-pointer hover:border-border-strong transition-colors">
             <span className="text-[13px]">{item}</span>
             <div className="w-8 h-[18px] bg-white/[0.08] rounded-full relative">
