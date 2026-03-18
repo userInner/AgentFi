@@ -14,7 +14,7 @@ const KPI_TARGET = {
 };
 
 export default function Dashboard() {
-  const { bots, transactions } = usePlatformStore();
+  const { bots, transactions, exchangeConnection, marketDataConfig, schedulerConfig, persistenceUpdatedAt } = usePlatformStore();
 
   const runningBots = bots.filter((b) => b.status === "running").length;
   const activationRate = Math.round((runningBots / Math.max(bots.length, 1)) * 100);
@@ -90,11 +90,12 @@ export default function Dashboard() {
           </ul>
         </div>
         <div className="border border-border rounded-lg p-5">
-          <h3 className="text-[13px] font-medium text-foreground">当前产品边界</h3>
+          <h3 className="text-[13px] font-medium text-foreground">生产接入状态</h3>
           <ul className="mt-3 space-y-2 text-[12px] text-muted">
-            <li>• 仅面向高阶 crypto 交易用户。</li>
-            <li>• 默认半自动执行，优先风控与审计。</li>
-            <li>• 暂不提供 AUM / 分润 / 跟投等能力。</li>
+            <li>• 交易所连接：{exchangeConnection.status === "configured" ? `${exchangeConnection.venue} 已配置` : "尚未配置真实交易所 API"}。</li>
+            <li>• 行情模式：{marketDataConfig.mode === "real" ? "真实行情" : "模拟行情"}，当前 Provider 为 {marketDataConfig.provider}。</li>
+            <li>• 调度器：{schedulerConfig.enabled ? `已启用，周期 ${schedulerConfig.cadenceSec}s` : "未启用后台调度"}。</li>
+            <li>• 最近持久化快照：{persistenceUpdatedAt ? fmtTime(persistenceUpdatedAt) : "尚未落盘"}。</li>
           </ul>
         </div>
       </div>

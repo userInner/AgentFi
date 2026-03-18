@@ -14,7 +14,7 @@ const pairBasePrice: Record<string, number> = {
 };
 
 export default function BotsPage() {
-  const { bots, toggleBot, addTransaction } = usePlatformStore();
+  const { bots, toggleBot, addTransaction, marketDataConfig, schedulerConfig, exchangeConnection } = usePlatformStore();
   const { token, isAuthenticated } = useAuthStore();
   const [decisionMsg, setDecisionMsg] = useState<string>("");
   const [loadingBotId, setLoadingBotId] = useState<string>("");
@@ -69,11 +69,31 @@ export default function BotsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-foreground">交易机器人</h2>
-          <p className="text-[13px] text-muted mt-0.5">管理你的 AI 交易策略</p>
+          <p className="text-[13px] text-muted mt-0.5">
+            管理你的 AI 交易策略 · {marketDataConfig.mode === "real" ? "真实行情" : "模拟行情"} · {schedulerConfig.enabled ? `调度 ${schedulerConfig.cadenceSec}s` : "手动触发"}
+          </p>
         </div>
         <button className="px-4 py-2 border border-border-strong text-[13px] text-foreground rounded-md hover:bg-white/[0.04] transition-colors">
           + 创建机器人
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="border border-border rounded-lg p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider">Exchange</p>
+          <p className="mt-1 text-[13px] text-foreground">{exchangeConnection.venue}</p>
+          <p className="text-[11px] text-muted mt-1">{exchangeConnection.status === "configured" ? "凭证已保存" : "待配置 API 凭证"}</p>
+        </div>
+        <div className="border border-border rounded-lg p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider">Market Feed</p>
+          <p className="mt-1 text-[13px] text-foreground">{marketDataConfig.mode === "real" ? "Real-Time" : "Simulated"}</p>
+          <p className="text-[11px] text-muted mt-1">{marketDataConfig.provider}</p>
+        </div>
+        <div className="border border-border rounded-lg p-4">
+          <p className="text-[11px] text-muted uppercase tracking-wider">Scheduler</p>
+          <p className="mt-1 text-[13px] text-foreground">{schedulerConfig.enabled ? "Enabled" : "Disabled"}</p>
+          <p className="text-[11px] text-muted mt-1">{schedulerConfig.enabled ? `${schedulerConfig.cadenceSec}s cadence` : "按需运行 Agent"}</p>
+        </div>
       </div>
 
       {decisionMsg && (
