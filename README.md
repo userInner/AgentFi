@@ -20,7 +20,7 @@ AgentFi 是一个面向高阶 crypto 交易用户的 AI 决策与执行工具（
 
 - AUM / 分润 / 跟投
 - 策略市场
-- 多交易所大而全接入
+- 多交易所大而全接入（当前以单连接配置、真实行情模式、任务调度与本地持久化为生产接入骨架）
 
 ## 核心验证指标
 
@@ -44,3 +44,12 @@ npm run dev
 ```bash
 npm run lint
 ```
+
+## 当前“生产接入”骨架
+
+- **真实交易所接入**：设置页支持保存交易所 venue、API Key / Secret、passphrase、testnet 开关与连接状态。
+- **真实行情模式**：可在模拟行情与真实行情之间切换，并保存 provider / tick interval 配置。
+- **任务调度**：可配置后台 cadence、自动恢复 Agent、checkpoint 持久化开关。
+- **持久化**：平台状态通过 Zustand persist 保存到浏览器 `localStorage`，用于 demo 阶段验证跨刷新保留状态。
+
+> 当前仍是前端 demo 骨架，尚未实际直连交易所 REST / WebSocket 或后端任务队列。

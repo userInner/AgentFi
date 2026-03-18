@@ -63,3 +63,31 @@ export interface RiskAlert {
   message: string;
   timestamp: number;
 }
+
+export interface ExchangeConnection {
+  venue: "hyperliquid" | "binance" | "okx";
+  label: string;
+  apiKey: string;
+  apiSecret: string;
+  passphrase: string;
+  isTestnet: boolean;
+  status: "disconnected" | "configured" | "connected";
+  lastValidatedAt: number | null;
+}
+
+export interface MarketDataConfig {
+  mode: "simulated" | "real";
+  provider: "internal-sim" | "exchange-ws" | "aggregator";
+  tickIntervalMs: number;
+  symbols: string[];
+  lastHeartbeatAt: number | null;
+}
+
+export interface SchedulerConfig {
+  enabled: boolean;
+  cadenceSec: number;
+  timezone: string;
+  autoStartBots: boolean;
+  persistCheckpoints: boolean;
+  lastRunAt: number | null;
+}
